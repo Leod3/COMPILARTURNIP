@@ -40,7 +40,7 @@ jobs:
           path: panvk_workdir/panvk_magisk.zip
 
       - name: Upload Adrenotools Package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: panvk_adrenotools
           path: panvk_workdir/panvk_adrenotools.zip

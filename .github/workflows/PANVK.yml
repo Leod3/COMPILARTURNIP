@@ -1,0 +1,83 @@
+name: Build Mesa Turnip + Panfrost for Android
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      SDK_VER: "34"
+      NDK_VER: "android-ndk-r28b"
+
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git curl unzip python3-pip patchelf cmake meson ninja-build flex bison zip
+          pip3 install mako PyYAML jinja2
+
+      - name: 📁 Prepare workspace
+        run: |
+          mkdir turnip_build && cd turnip_build
+          curl -LO https://dl.google.com/android/repository/${{ env.NDK_VER }}-linux.zip
+          unzip ${{ env.NDK_VER }}-linux.zip
+          curl -LO https://gitlab.freedesktop.org/mesa/mesa/-/archive/main/mesa-main.zip
+          unzip mesa-main.zip
+
+      - name: 🧱 Build drivers
+        run: |
+          cd turnip_build
+          NDK_PATH="$PWD/${{ env.NDK_VER }}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          MESA_PATH="$PWD/mesa-main"
+          mkdir -p bin
+          ln -sf $NDK_PATH/clang bin/cc
+          ln -sf $NDK_PATH/clang++ bin/c++
+          export PATH="$PWD/bin:$NDK_PATH:$PATH"
+          export CC=clang
+          export CXX=clang++
+          export AR=llvm-ar
+          export STRIP=llvm-strip
+          export OBJDUMP=llvm-objdump
+          export OBJCOPY=llvm-objcopy
+
+          cat > android-aarch64.txt <<EOF
+[binaries]
+c = 'cc'
+cpp = 'c++'
+ar = 'llvm-ar'
+strip = '${NDK_PATH}/aarch64-linux-android-strip'
+
+[host_machine]
+system = 'android'
+cpu_family = 'aarch64'
+cpu = 'armv8'
+endian = 'little'
+EOF
+
+          meson setup mesa-main/build \
+            --cross-file android-aarch64.txt \
+            -Dbuildtype=release \
+            -Dplatforms=android \
+            -Dplatform-sdk-version=${{ env.SDK_VER }} \
+            -Dandroid-stub=true \
+            -Dgallium-drivers=freedreno,panfrost \
+            -Dvulkan-drivers=freedreno,panfrost \
+            -Dvulkan-beta=true \
+            -Db_lto=true \
+            -Dstrip=true \
+            -Degl=disabled
+
+          ninja -C mesa-main/build
+
+      - name: 🗃️ Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Vulkan Drivers (.so)
+          path: |
+            turnip_build/mesa-main/build/src/freedreno/vulkan/libvulkan_freedreno.so
+            turnip_build/mesa-main/build/src/panfrost/vulkan/libvulkan_panfrost.so

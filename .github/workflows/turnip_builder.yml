@@ -1,39 +1,54 @@
-name: Build "turnip"
+name: PanVK Builder CI
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: "20 5 1,15 * *"
 
 jobs:
-  start_building_turnip:
-    runs-on: ubuntu-24.04
+  build-panvk:
+    runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Prepare environment
-      run: |
-        sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
-        sudo apt update
-        sudo apt build-dep mesa -y
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip \
+            meson \
+            ninja-build \
+            patchelf \
+            unzip \
+            curl \
+            flex \
+            bison \
+            zip \
+            glslang-tools \
+            ccache
+          pip3 install mako
 
-    - name: Execute build script
-      run: bash ./turnip_builder.sh
+      - name: Run builder script
+        run: |
+          chmod +x ./turnip_builder.sh
+          ./turnip_builder.sh
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: Upload meson and ninja logs for debugging
-        path: |
-          turnip_workdir/ninja_log
-          turnip_workdir/mesa-main/build-android-aarch64/meson-logs/meson-log.txt
+      - name: Upload build logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-logs
+          path: |
+            turnip_workdir/meson_log.txt
+            turnip_workdir/ninja_log.txt
 
-    - name: Release "turnip"
-      uses: softprops/action-gh-release@v1
-      with:
-        body: Turnip magisk module and driver package for adrenotools
-        tag_name: github_run
-        name: Weekly Action Release
-        files: |
-           turnip_workdir/turnip.zip
-           turnip_workdir/turnip_adrenotools.zip
+      - name: Upload Magisk Module
+        uses: actions/upload-artifact@v4
+        with:
+          name: panvk_magisk
+          path: turnip_workdir/panvk_magisk.zip
+
+      - name: Upload Adrenotools Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: panvk_adrenotools
+          path: turnip_workdir/panvk_adrenotools.zip

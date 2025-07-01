@@ -116,8 +116,8 @@ EOF
 			-Dplatforms=android \
 			-Dplatform-sdk-version="$sdkver" \
 			-Dandroid-stub=true \
-			-Dgallium-drivers= \
-			-Dvulkan-drivers=freedreno \
+			-Dgallium-drivers=panfrost \
+			-Dvulkan-drivers=freedreno,panfrost \
 			-Dvulkan-beta=true \
 			-Dfreedreno-kmds=kgsl \
 			-Db_lto=true \

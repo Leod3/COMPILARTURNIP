@@ -25,8 +25,8 @@ jobs:
       with:
         name: Upload meson and ninja logs for debugging
         path: |
-          turnip_workdir/ninja_log
-          turnip_workdir/mesa-main/build-android-aarch64/meson-logs/meson-log.txt
+            turnip_build/mesa-main/build/src/freedreno/vulkan/libvulkan_freedreno.so
+            turnip_build/mesa-main/build/src/panfrost/vulkan/libvulkan_panfrost.so
 
     - name: Release "turnip"
       uses: softprops/action-gh-release@v1

@@ -33,7 +33,6 @@ jobs:
         run: |
           cd turnip_build
           NDK_PATH="$PWD/${NDK_VER}/toolchains/llvm/prebuilt/linux-x86_64/bin"
-          MESA_PATH="$PWD/mesa-main"
           mkdir -p bin
           ln -sf $NDK_PATH/clang bin/cc
           ln -sf $NDK_PATH/clang++ bin/c++
@@ -75,10 +74,10 @@ EOF
 
           ninja -C mesa-main/build
 
-      - name: 📤 Publicar artefatos Vulkan (.so)
-        uses: actions/upload-artifact@v3
+      - name: 📤 Upload artefatos (.so)
+        uses: actions/upload-artifact@v4
         with:
-          name: Vulkan-drivers
+          name: Mesa Vulkan Drivers
           path: |
             turnip_build/mesa-main/build/src/freedreno/vulkan/libvulkan_freedreno.so
             turnip_build/mesa-main/build/src/panfrost/vulkan/libvulkan_panfrost.so

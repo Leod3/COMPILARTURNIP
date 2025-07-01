@@ -127,17 +127,17 @@ EOF
 	echo "Compiling build files ..." $'\n'
 		ninja -C build-android-aarch64 &> "$workdir/ninja_log"
 
-	if ! [ -a "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_freedreno.so ]; then
+	if ! [ -a "$workdir"/mesa-main/build-android-aarch64/src/panfrost/vulkan/libvulkan_panfrost.so ]; then
 		echo -e "$red Build failed! $nocolor" && exit 1
 	fi
 }
 
 port_lib_for_magisk(){
 	echo "Using patchelf to match soname ..." $'\n'
-		cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_freedreno.so "$workdir"
+		cp "$workdir"/mesa-main/build-android-aarch64/src/panfrost/vulkan/libvulkan_panfrost.so "$workdir"
 		cd "$workdir"
-		patchelf --set-soname vulkan.adreno.so libvulkan_freedreno.so
-		mv libvulkan_freedreno.so vulkan.adreno.so
+		patchelf --set-soname vulkan.mali.so libvulkan_panfrost.so
+		mv libvulkan_panfrost.so vulkan.mali.so
 
 	echo "Prepare magisk module structure ..." $'\n'
 		p1="system/vendor/lib64/hw"
@@ -176,11 +176,11 @@ EOF
 		cat <<EOF >"customize.sh"
 set_perm_recursive \$MODPATH/system 0 0 755 u:object_r:system_file:s0
 set_perm_recursive \$MODPATH/system/vendor 0 2000 755 u:object_r:vendor_file:s0
-set_perm \$MODPATH/$p1/vulkan.adreno.so 0 0 0644 u:object_r:same_process_hal_file:s0
+set_perm \$MODPATH/$p1/vulkan.mali.so 0 0 0644 u:object_r:same_process_hal_file:s0
 EOF
 
 	echo "Copy necessary files from work directory ..." $'\n'
-		cp "$workdir"/vulkan.adreno.so "$magiskdir"/"$p1"
+		cp "$workdir"/vulkan.mali.so "$magiskdir"/"$p1"
 
 	echo "Packing files in to magisk module ..." $'\n'
 		zip -r "$workdir"/turnip.zip ./* &> /dev/null
@@ -191,16 +191,16 @@ EOF
 }
 
 port_lib_for_adrenotools(){
-	libname=vulkan.freedreno.so
+	libname=vulkan.panfrost.so
 	echo "Using patchelf to match soname" $'\n'
-		cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_freedreno.so "$workdir"/$libname
+		cp "$workdir"/mesa-main/build-android-aarch64/src/panfrost/vulkan/libvulkan_panfrost.so "$workdir"/$libname
 		cd "$workdir"
 		patchelf --set-soname $libname $libname
 	echo "Preparing meta.json" $'\n'
 		cat <<EOF > "meta.json"
 {
 	"schemaVersion": 1,
-	"name": "freedreno_turnip-CI",
+	"name": "panfrost_turnip-CI",
 	"description": "$(date)",
 	"author": "MrMiy4mo, kethen",
 	"packageVersion": "1",

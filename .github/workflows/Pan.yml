@@ -1,0 +1,46 @@
+name: PanVK Builder CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-panvk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip \
+            meson \
+            ninja-build \
+            patchelf \
+            unzip \
+            curl \
+            flex \
+            bison \
+            zip \
+            glslang-tools \
+            ccache
+          pip3 install mako
+
+      - name: Run panvk_builder.sh
+        run: |
+          chmod +x ./panvk_builder.sh
+          ./panvk_builder.sh
+
+      - name: Upload Magisk Module
+        uses: actions/upload-artifact@v4
+        with:
+          name: panvk_magisk
+          path: panvk_workdir/panvk_magisk.zip
+
+      - name: Upload Adrenotools Package
+        uses: actions/upload-artifact@v3
+        with:
+          name: panvk_adrenotools
+          path: panvk_workdir/panvk_adrenotools.zip
